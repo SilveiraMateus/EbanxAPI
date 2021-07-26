@@ -33,19 +33,19 @@ namespace EbanxAPI.Controllers
     public class AccountsController : ApiController
     {
         [HttpGet]
-
+        [Route("Balance")]
         public IHttpActionResult Balance(string account_id)
         {
             var account = Cache.Accounts.SingleOrDefault(e => e.id == account_id);
             if (account == null)
             {
-                return NotFound();
+                return Content(HttpStatusCode.NotFound, 0);
             }
             else { return Ok(account.balance); }
         }
 
         [HttpPost]
-
+        [Route("Event")]
         public IHttpActionResult Event(EventCommand command)
         {
             if (command.type == "deposit")
@@ -55,12 +55,13 @@ namespace EbanxAPI.Controllers
                 {
                     account = new Account(command.destination, command.amount);
                     Cache.Accounts.Add(account);
-                    return Ok(new { destination = account });
+                    return Content(HttpStatusCode.Created, new { destination = account });
+                   
                 }
                 else
                 {
                     account.balance += command.amount;
-                    return Ok(new { destination = account });
+                    return Content(HttpStatusCode.Created, new { destination = account });
                 }
             }
             else if (command.type == "withdraw")
@@ -68,14 +69,12 @@ namespace EbanxAPI.Controllers
                 var account = Cache.Accounts.SingleOrDefault(e => e.id == command.origin);
                 if (account == null)
                 {
-                    account = new Account(command.origin, command.amount);
-                    Cache.Accounts.Add(account);
-                    return Ok(new { origin = account });
+                    return Content(HttpStatusCode.NotFound, 0);
                 }
                 else
                 {
                     account.balance -= command.amount;
-                    return Ok(new { origin = account });
+                    return Content(HttpStatusCode.Created, new { origin = account });
                 }
             }
             else if (command.type == "transfer")
@@ -84,7 +83,7 @@ namespace EbanxAPI.Controllers
                 var destination = Cache.Accounts.SingleOrDefault(e => e.id == command.destination);
                 if (origin == null)
                 {
-                    return NotFound();
+                    return Content(HttpStatusCode.NotFound, 0);
                 }
                 else
                 {
@@ -93,13 +92,13 @@ namespace EbanxAPI.Controllers
                     {
                         destination = new Account(command.destination, command.amount);
                         Cache.Accounts.Add(destination);
-                        return Ok(new { destination = destination, origin = origin });
+                        return Content(HttpStatusCode.Created, new { destination = destination, origin = origin });
                     }
                     else
                     {
                         destination.balance += command.amount;
 
-                        return Ok(new { destination = destination, origin = origin });
+                        return Content(HttpStatusCode.Created, new { destination = destination, origin = origin });
                     }
                 }
             }
@@ -108,11 +107,11 @@ namespace EbanxAPI.Controllers
         }
 
         [HttpPost]
-
+        [Route("Reset")]
         public IHttpActionResult Reset()
         {
             Cache.Accounts.Clear();
-            return Ok();
+            return Ok("OK");
         }
     }
 }
